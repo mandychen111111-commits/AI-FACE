@@ -6,10 +6,6 @@
     <title>奇異生技 | AI Skin Analysis (Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 導入 Google MediaPipe AI 臉部追蹤引擎 -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap');
         
@@ -99,10 +95,10 @@
             animation: scanMove 2.5s ease-in-out infinite;
         }
 
-        /* --- 即時動態呼吸發光點 --- */
+        /* --- 固定式呼吸發光點 --- */
         @keyframes pulse {
-            0%, 100% { transform: scale(1) translate(-50%, -50%); box-shadow: 0 0 10px rgba(212, 175, 55, 0.8); }
-            50% { transform: scale(1.6) translate(-30%, -30%); box-shadow: 0 0 25px rgba(212, 175, 55, 1); }
+            0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 10px rgba(212, 175, 55, 0.8); }
+            50% { transform: scale(1.6); opacity: 1; box-shadow: 0 0 25px rgba(212, 175, 55, 1); }
         }
         .landmark {
             position: absolute;
@@ -111,12 +107,11 @@
             background: var(--champagne-gold);
             border-radius: 50%;
             z-index: 25;
-            opacity: 0; /* 預設隱藏，抓到臉才顯示 */
-            /* 加入過渡動畫讓追蹤更平滑，不抖動 */
-            transition: top 0.1s linear, left 0.1s linear, opacity 0.3s ease;
+            display: none; /* 預設隱藏 */
         }
-        .scanning .landmark.active {
-            opacity: 1;
+        /* 當啟動掃描時，直接顯示固定位置的光點 */
+        .scanning .landmark {
+            display: block;
             animation: pulse 1.5s infinite;
         }
 
@@ -157,35 +152,8 @@
             display: none;
             transition: opacity 0.5s ease;
         }
-        .scanning .face-frame { display: block; }
-        .scanning .face-frame.face-detected { opacity: 0.2; } /* 抓到臉後變淡，凸顯追蹤點 */
+        .scanning .face-frame { display: block; opacity: 0.3; } /* 啟動時微透，讓客戶對準 */
 
-        // 替換 initCameraAndAnalysis 中的相機請求部分
-async function initCameraAndAnalysis() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'user',
-                // 移除過於嚴格的解析度限制，增加相容性
-                width: { ideal: 640 },
-                height: { ideal: 480 }
-            }, 
-            audio: false 
-        });
-        video.srcObject = stream;
-        // ...其餘 AI 載入邏輯
-    } catch (err) {
-        if (err.name === 'NotReadableError') {
-            showModal("鏡頭被其他 App 佔用中。\n請關閉相機、LINE視訊後重試。");
-        } else {
-            showModal("無法存取相機，請確認瀏覽器權限。");
-        }
-    }
-}
-
-
-
-        
         /* 全頁式報告樣式 */
         #report-page {
             position: absolute;
@@ -258,12 +226,12 @@ async function initCameraAndAnalysis() {
             <div class="scan-line"></div>
             <div class="face-frame" id="face-guide"></div>
             
-            <!-- 即時動態特徵點 (交由 AI 控制座標) -->
-            <div class="landmark" id="pt-forehead"></div> 
-            <div class="landmark" id="pt-left-eye"></div> 
-            <div class="landmark" id="pt-right-eye"></div> 
-            <div class="landmark" id="pt-nose"></div> 
-            <div class="landmark" id="pt-chin"></div> 
+            <!-- 固定式五官定位點 (放置於中央引導框的合理比例處) -->
+            <div class="landmark" style="top: 36%; left: 50%; margin-left: -4px;"></div> <!-- 眉心 -->
+            <div class="landmark" style="top: 44%; left: 42%; margin-left: -4px;"></div> <!-- 左眼 -->
+            <div class="landmark" style="top: 44%; left: 58%; margin-left: -4px;"></div> <!-- 右眼 -->
+            <div class="landmark" style="top: 53%; left: 50%; margin-left: -4px;"></div> <!-- 鼻尖 -->
+            <div class="landmark" style="top: 64%; left: 50%; margin-left: -4px;"></div> <!-- 下巴 -->
 
             <!-- UI 頂部狀態 -->
             <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-30 pointer-events-none">
@@ -284,7 +252,7 @@ async function initCameraAndAnalysis() {
                 </div>
                 <h2 class="text-xl font-medium mb-3 tracking-wide text-[#2C3E50]">啟動美肌觀察儀</h2>
                 <p class="text-xs text-[#B2B1B1] leading-relaxed mb-8 px-2 font-medium">
-                    我們將透過即時 AI 臉部追蹤與環境定位，為您量身打造專屬養護建議。
+                    我們將透過視訊微觀技術與定位分析當前環境因素，為您量身打造專屬養護建議。
                 </p>
                 <button id="start-btn" onclick="initCameraAndAnalysis()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-all">
                     開啟鏡頭掃描
@@ -400,10 +368,7 @@ async function initCameraAndAnalysis() {
 
         const video = document.getElementById('webcam');
         const appContainer = document.getElementById('app');
-        const videoContainer = document.getElementById('video-container');
         let streamActive = false;
-        let faceMeshConfigured = false;
-        let aiCamera = null;
         
         function showModal(msg) {
             document.getElementById('modal-msg').innerText = msg;
@@ -421,103 +386,31 @@ async function initCameraAndAnalysis() {
         setInterval(updateTime, 1000);
         updateTime();
 
-        // 核心：AI 臉部模型結果處理
-        function onResults(results) {
-            if (!appContainer.classList.contains('scanning')) return;
-
-            const landmarksEls = document.querySelectorAll('.landmark');
-            const guideFrame = document.getElementById('face-guide');
-
-            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                // 抓到臉龐，顯示追蹤點並淡化外框
-                landmarksEls.forEach(el => el.classList.add('active'));
-                guideFrame.classList.add('face-detected');
-
-                const landmarks = results.multiFaceLandmarks[0];
-                
-                // 動態計算座標映射 (處理 object-fit: cover 與 scaleX(-1) 鏡像)
-                const containerWidth = videoContainer.clientWidth;
-                const containerHeight = videoContainer.clientHeight;
-                const videoRatio = video.videoWidth / video.videoHeight;
-                const containerRatio = containerWidth / containerHeight;
-                
-                let renderWidth, renderHeight, offsetX = 0, offsetY = 0;
-                if (containerRatio > videoRatio) {
-                    renderWidth = containerWidth;
-                    renderHeight = containerWidth / videoRatio;
-                    offsetY = (containerHeight - renderHeight) / 2;
-                } else {
-                    renderHeight = containerHeight;
-                    renderWidth = containerHeight * videoRatio;
-                    offsetX = (containerWidth - renderWidth) / 2;
-                }
-
-                // 座標轉換函式 (因鏡頭翻轉，X軸需反轉: 1 - x)
-                const updatePoint = (id, landmarkObj) => {
-                    const el = document.getElementById(id);
-                    if(!el || !landmarkObj) return;
-                    const x = offsetX + (1 - landmarkObj.x) * renderWidth;
-                    const y = offsetY + landmarkObj.y * renderHeight;
-                    el.style.left = `${x}px`;
-                    el.style.top = `${y}px`;
-                };
-
-                // 對應五官特徵點 (MediaPipe 標準 Index)
-                updatePoint('pt-forehead', landmarks[10]);  // 眉心
-                updatePoint('pt-right-eye', landmarks[386]); // 右眼 (鏡像中為左側)
-                updatePoint('pt-left-eye', landmarks[159]);  // 左眼 (鏡像中為右側)
-                updatePoint('pt-nose', landmarks[4]);       // 鼻尖
-                updatePoint('pt-chin', landmarks[152]);     // 下巴
-
-            } else {
-                // 未抓到臉龐時隱藏
-                landmarksEls.forEach(el => el.classList.remove('active'));
-                guideFrame.classList.remove('face-detected');
-            }
-        }
-
         async function initCameraAndAnalysis() {
             if (!streamActive) {
                 const btn = document.getElementById('start-btn');
-                btn.innerHTML = `<span class="animate-pulse">載入 AI 面部引擎中...</span>`;
+                btn.innerHTML = `<span class="animate-pulse">啟動感測器中...</span>`;
                 
                 try {
-                    // 1. 初始化相機
+                    // 放寬解析度限制，大幅降低手機相容性錯誤與 NotReadableError
                     const stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'user', aspectRatio: { ideal: window.innerHeight / window.innerWidth } }, 
+                        video: { 
+                            facingMode: 'user', 
+                            width: { ideal: 640 }, 
+                            height: { ideal: 480 } 
+                        }, 
                         audio: false 
                     });
                     video.srcObject = stream;
                     streamActive = true;
-
-                    // 2. 初始化 Google FaceMesh
-                    if (!faceMeshConfigured) {
-                        const faceMesh = new FaceMesh({locateFile: (file) => {
-                            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-                        }});
-                        faceMesh.setOptions({
-                            maxNumFaces: 1,
-                            refineLandmarks: false,
-                            minDetectionConfidence: 0.5,
-                            minTrackingConfidence: 0.5
-                        });
-                        faceMesh.onResults(onResults);
-
-                        aiCamera = new Camera(video, {
-                            onFrame: async () => {
-                                if(appContainer.classList.contains('scanning')){
-                                    await faceMesh.send({image: video});
-                                }
-                            }
-                        });
-                        await aiCamera.start();
-                        faceMeshConfigured = true;
-                    }
-
                     startAnalysisUI();
                 } catch (err) {
-                    console.error("相機或AI開啟失敗: ", err);
-                    showModal("無法存取相機或載入AI。\n請確認網路與權限。");
+                    console.error("相機開啟失敗: ", err);
+                    if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                        showModal("鏡頭被其他 App 佔用中。\n請關閉相機或通訊軟體視訊後重試，\n建議使用 Chrome 瀏覽器開啟。");
+                    } else {
+                        showModal("無法存取相機。\n請確認瀏覽器已允許相機權限設定。");
+                    }
                     btn.innerHTML = `開啟鏡頭掃描`;
                 }
             } else {
@@ -538,24 +431,20 @@ async function initCameraAndAnalysis() {
             cameraView.classList.remove('opacity-0', 'pointer-events-none');
             gpsModal.classList.add('opacity-0', 'pointer-events-none');
             
-            // 重置引導框與特徵點狀態
-            document.getElementById('face-guide').classList.remove('face-detected');
-            document.querySelectorAll('.landmark').forEach(el => el.classList.remove('active'));
-            
             setTimeout(() => {
                 locationText.innerText = '高雄市, 苓雅區';
-                statusText.innerText = '正在進行 AI 微觀偵測';
+                statusText.innerText = '請將臉部對準光圈'; // 更新為無 AI 追蹤的引導語句
                 appContainer.classList.remove('results-active');
                 appContainer.classList.add('scanning');
                 scanTips.classList.remove('hidden');
             }, 500);
 
             const steps = [
-                "啟動 AI 臉部輪廓精準定位...",
-                "正在追蹤肌膚紋理與五官座標...",
-                "鎖定 T 字部位與 U 字部位養護節點...",
-                "環境分析：抓取氣象與紫外線指數...",
-                "綜合評估：根據在地環境優化配方..."
+                "啟動微觀肌膚紋理觀察...",
+                "正在抓取區域氣象與紫外線指數...",
+                "鎖定核心部位養護節點...",
+                "比對奇異生技護理資料庫...",
+                "綜合評估：產出專屬防禦配方..."
             ];
             
             let stepIdx = 0;
@@ -569,7 +458,7 @@ async function initCameraAndAnalysis() {
             setTimeout(() => {
                 clearInterval(stepInterval);
                 appContainer.classList.remove('scanning');
-                statusText.innerText = '掃描完成';
+                statusText.innerText = '觀察完成';
                 scanTips.classList.add('hidden');
                 
                 generateResult();
