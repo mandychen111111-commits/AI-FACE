@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>奇異生技 | AI Skin Analysis (Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -24,18 +24,28 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            /* 支援傳統瀏覽器 */
+            height: 100vh; 
+            /* 現代手機動態視窗高度適配，防止底部被工具列遮擋 */
+            height: 100dvh; 
         }
 
         .phone-container {
             width: 100%;
             max-width: 414px;
             height: 100%;
-            max-height: 896px;
             background: var(--pearl-white); 
             position: relative;
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 針對桌機/平板的模擬手機外觀設定 */
+        @media (min-width: 600px) {
+            .phone-container {
+                max-height: 850px;
+                border-radius: 40px;
+            }
         }
 
         /* 高清即時影像容器 */
@@ -163,7 +173,8 @@
 
         .ar-badge-container {
             position: absolute;
-            bottom: 120px;
+            /* 將徽章位置稍微調高，避免手機窄螢幕重疊 */
+            bottom: 130px;
             left: 0;
             width: 100%;
             padding: 0 16px;
@@ -205,7 +216,8 @@
             transition: opacity 0.5s ease, top 0.5s ease;
             pointer-events: none;
         }
-        .ar-results-active .ar-pill { opacity: 1; top: 56%; }
+        /* 調整結果狀態位置 */
+        .ar-results-active .ar-pill { opacity: 1; top: 50%; }
 
         /* 全頁式報告樣式 */
         #report-page {
@@ -279,7 +291,7 @@
             <div class="scan-line"></div>
             <div class="face-frame" id="face-guide"></div>
             
-            <!-- 新增：AR 臉頰/眼周追蹤網格 (模擬參考圖片的紫色框線) -->
+            <!-- AR 臉頰紫色追蹤區塊 (SVG) -->
             <svg class="ar-zone-svg" viewBox="0 0 220 320" preserveAspectRatio="xMidYMid meet">
                 <!-- 雙頰與鼻樑的連線區域 -->
                 <path d="M 40 160 C 50 210, 80 220, 110 180 C 140 220, 170 210, 180 160 C 170 140, 130 140, 110 150 C 90 140, 50 140, 40 160 Z" 
@@ -295,7 +307,7 @@
             <div class="landmark" style="top: 53%; left: 50%;"></div> 
             <div class="landmark" style="top: 64%; left: 50%;"></div> 
 
-            <!-- === 新增：AR 檢測結果 (掃描後浮現於鏡頭上) === -->
+            <!-- === AR 檢測結果 (掃描後浮現於鏡頭上) === -->
             <!-- 懸浮膚質標籤 -->
             <div id="ar-skin-pill" class="ar-pill">
                 <div class="w-10 h-10 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-inner">
@@ -312,8 +324,8 @@
                 <!-- 動態注入的 5 個圓圈 -->
             </div>
 
-            <!-- AR 畫面進入報告頁的按鈕 -->
-            <div id="ar-action-btn" class="absolute bottom-6 left-0 w-full px-6 z-40 hidden badge-pop" style="animation-delay: 1s;">
+            <!-- AR 畫面進入報告頁的按鈕 (加上 pb-safe 確保安全區域) -->
+            <div id="ar-action-btn" class="absolute bottom-0 left-0 w-full p-6 pb-8 z-40 hidden badge-pop" style="animation-delay: 1s;">
                 <button onclick="showFullReport()" class="w-full bg-[#D4AF37] text-white py-4 rounded-full text-sm font-bold tracking-wide shadow-xl active:scale-95 transition-transform flex justify-center items-center gap-2">
                     查看完整專屬報告
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -355,7 +367,7 @@
             </div>
         </div>
 
-        <!-- === 第二頁：全頁式專屬報告 (隱藏直到使用者點擊) === -->
+        <!-- === 第二頁：全頁式專屬報告 === -->
         <div id="report-page" class="flex flex-col">
             <div class="relative w-full h-48 bg-gradient-to-b from-[#D4AF37]/10 to-[#FBFCF8] flex-shrink-0 border-b border-[#B2B1B1]/20">
                 <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488188840666-e2308741a62f?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center opacity-15 mix-blend-multiply"></div>
@@ -444,13 +456,13 @@
             }
         };
 
-        // 合規的美妝養護指標維度 (對應參考圖的斑點、皺紋等)
+        // 合規的美妝養護指標維度
         const arMetrics = [
-            { name: "澄淨度", color: "#06b6d4" }, // 替代斑點
-            { name: "平滑度", color: "#10b981" }, // 替代皺紋
-            { name: "緊緻度", color: "#a855f7" }, // 替代粗大毛孔/鬆弛
-            { name: "眼周亮采", color: "#3b82f6" }, // 替代黑眼圈
-            { name: "潤澤度", color: "#f43f5e" }  // 替代眼袋/保濕
+            { name: "澄淨度", color: "#06b6d4" }, 
+            { name: "平滑度", color: "#10b981" }, 
+            { name: "緊緻度", color: "#a855f7" }, 
+            { name: "眼周亮采", color: "#3b82f6" }, 
+            { name: "潤澤度", color: "#f43f5e" }  
         ];
 
         const video = document.getElementById('webcam');
@@ -505,7 +517,6 @@
             const scanTips = document.getElementById('scanning-status');
             const stepText = document.getElementById('scan-step-text');
             
-            // 隱藏不必要的元素，重置狀態
             reportPage.classList.remove('active');
             cameraView.classList.remove('opacity-0', 'pointer-events-none');
             gpsModal.classList.add('opacity-0', 'pointer-events-none');
@@ -536,7 +547,6 @@
                 }
             }, 1200);
 
-            // 掃描結束 -> 展現 AR 分析結果 (而非直接跳轉報告)
             setTimeout(() => {
                 clearInterval(stepInterval);
                 appContainer.classList.remove('scanning');
@@ -549,24 +559,21 @@
         }
 
         function generateARResults() {
-            // 隨機決定膚質
             const skinTypes = Object.keys(chiyibioDatabase);
             const detectedType = skinTypes[Math.floor(Math.random() * skinTypes.length)];
             const skinData = chiyibioDatabase[detectedType];
 
-            // 1. 更新懸浮標籤與報告頁的文字
             document.getElementById('ar-skin-type-text').innerText = detectedType;
             document.getElementById('report-skin-type').innerText = detectedType;
             document.getElementById('report-skin-need').innerText = skinData.need;
             document.getElementById('report-skin-desc').innerText = skinData.desc;
 
-            // 2. 生成五大維度分數徽章 (模擬參考截圖)
             const badgesContainer = document.getElementById('ar-badges');
             badgesContainer.innerHTML = ''; 
             badgesContainer.classList.remove('hidden');
 
             arMetrics.forEach((metric, index) => {
-                const score = Math.floor(Math.random() * (98 - 75 + 1)) + 75; // 產生 75-98 之間的分數
+                const score = Math.floor(Math.random() * (98 - 75 + 1)) + 75; 
                 const badgeHTML = `
                     <div class="flex flex-col items-center gap-1 badge-pop" style="animation-delay: ${index * 0.15}s;">
                         <div class="ar-score-circle" style="border-color: ${metric.color};">
@@ -578,7 +585,6 @@
                 badgesContainer.insertAdjacentHTML('beforeend', badgeHTML);
             });
 
-            // 3. 生成報告頁的產品清單
             const productContainer = document.getElementById('product-list');
             productContainer.innerHTML = ''; 
             skinData.products.forEach((prod, index) => {
@@ -594,16 +600,13 @@
                 productContainer.insertAdjacentHTML('beforeend', productHtml);
             });
 
-            // 4. 顯示底部「查看報告」按鈕
             const actionBtn = document.getElementById('ar-action-btn');
             actionBtn.classList.remove('hidden');
-            // 重新觸發動畫
             actionBtn.style.animation = 'none';
             actionBtn.offsetHeight; 
             actionBtn.style.animation = null; 
         }
 
-        // 手動點擊按鈕後，才進入全頁報告
         function showFullReport() {
             const cameraView = document.getElementById('camera-view');
             const reportPage = document.getElementById('report-page');
