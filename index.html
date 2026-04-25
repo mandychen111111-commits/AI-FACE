@@ -160,6 +160,32 @@
         .scanning .face-frame { display: block; }
         .scanning .face-frame.face-detected { opacity: 0.2; } /* 抓到臉後變淡，凸顯追蹤點 */
 
+        // 替換 initCameraAndAnalysis 中的相機請求部分
+async function initCameraAndAnalysis() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                // 移除過於嚴格的解析度限制，增加相容性
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }, 
+            audio: false 
+        });
+        video.srcObject = stream;
+        // ...其餘 AI 載入邏輯
+    } catch (err) {
+        if (err.name === 'NotReadableError') {
+            showModal("鏡頭被其他 App 佔用中。\n請關閉相機、LINE視訊後重試。");
+        } else {
+            showModal("無法存取相機，請確認瀏覽器權限。");
+        }
+    }
+}
+
+
+
+        
         /* 全頁式報告樣式 */
         #report-page {
             position: absolute;
