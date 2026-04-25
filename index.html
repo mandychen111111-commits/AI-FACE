@@ -24,9 +24,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* 支援傳統瀏覽器 */
             height: 100vh; 
-            /* 現代手機動態視窗高度適配，防止底部被工具列遮擋 */
             height: 100dvh; 
         }
 
@@ -40,15 +38,10 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
         }
 
-        /* 針對桌機/平板的模擬手機外觀設定 */
         @media (min-width: 600px) {
-            .phone-container {
-                max-height: 850px;
-                border-radius: 40px;
-            }
+            .phone-container { max-height: 850px; border-radius: 40px; }
         }
 
-        /* 高清即時影像容器 */
         #video-container {
             position: absolute;
             inset: 0;
@@ -73,7 +66,6 @@
             filter: contrast(1.05) brightness(1.0);
         }
 
-        /* 掃描線與光束 */
         @keyframes scanMove {
             0% { transform: translateY(-100%); opacity: 0; }
             10% { opacity: 1; }
@@ -100,181 +92,107 @@
             height: 120px;
             background: linear-gradient(to top, rgba(212, 175, 55, 0.35), transparent);
         }
-        .scanning .scan-line {
-            display: block;
-            animation: scanMove 2.5s ease-in-out infinite;
-        }
+        .scanning .scan-line { display: block; animation: scanMove 2.5s ease-in-out infinite; }
 
-        /* 固定式呼吸發光點 */
         @keyframes pulse {
             0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; box-shadow: 0 0 15px rgba(212, 175, 55, 0.9); }
             50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; box-shadow: 0 0 30px rgba(212, 175, 55, 1); }
         }
         .landmark {
             position: absolute;
-            width: 12px; 
-            height: 12px;
-            background: var(--champagne-gold);
-            border: 2px solid #FFF; 
-            border-radius: 50%;
-            z-index: 25;
-            display: none; 
+            width: 12px; height: 12px; background: var(--champagne-gold);
+            border: 2px solid #FFF; border-radius: 50%; z-index: 25; display: none; 
         }
-        .scanning .landmark {
-            display: block;
-            animation: pulse 1.5s infinite;
-        }
+        .scanning .landmark { display: block; animation: pulse 1.5s infinite; }
 
-        /* 臉部引導定位框 */
         .face-frame {
             position: absolute;
-            top: 50%; 
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px; 
-            height: 320px; 
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 220px; height: 320px; 
             border: 3px dashed rgba(212, 175, 55, 0.9); 
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.4), inset 0 0 20px rgba(212, 175, 55, 0.4); 
             border-radius: 110px 110px 100px 100px;
-            z-index: 15;
-            display: none;
-            transition: opacity 0.5s ease;
+            z-index: 15; display: none; transition: opacity 0.5s ease;
         }
         .scanning .face-frame { display: block; opacity: 0.8; }
-        .ar-results-active .face-frame { display: none; } /* 顯示結果時隱藏框線 */
+        .ar-results-active .face-frame { display: none; } 
 
-        /* --- 新增：AR 臉頰紫色追蹤區塊 (SVG) --- */
         .ar-zone-svg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px;
-            height: 320px;
-            z-index: 18;
-            pointer-events: none;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.8s ease;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 220px; height: 320px; z-index: 18; pointer-events: none;
+            display: none; opacity: 0; transition: opacity 0.8s ease;
         }
         .scanning .ar-zone-svg { display: block; opacity: 0.6; }
         .ar-results-active .ar-zone-svg { display: block; opacity: 0.9; }
 
-        /* --- 新增：AR 分數徽章與彈出動畫 --- */
         @keyframes popIn {
             0% { transform: scale(0.5) translateY(20px); opacity: 0; }
             70% { transform: scale(1.1) translateY(-5px); opacity: 1; }
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
-        .badge-pop {
-            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            opacity: 0;
-        }
+        .badge-pop { animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
 
         .ar-badge-container {
-            position: absolute;
-            /* 將徽章位置稍微調高，避免手機窄螢幕重疊 */
-            bottom: 130px;
-            left: 0;
-            width: 100%;
-            padding: 0 16px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 40;
-            pointer-events: none;
+            position: absolute; bottom: 130px; left: 0; width: 100%;
+            padding: 0 16px; display: flex; justify-content: space-between;
+            z-index: 40; pointer-events: none;
         }
-
         .ar-score-circle {
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-            border: 3px solid;
+            width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 255, 255, 0.9);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2); border: 3px solid;
         }
 
-        /* --- 懸浮膚質標籤 --- */
         .ar-pill {
-            position: absolute;
-            top: 60%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 12px 24px;
-            border-radius: 50px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-            z-index: 40;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            opacity: 0;
-            transition: opacity 0.5s ease, top 0.5s ease;
-            pointer-events: none;
+            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            padding: 12px 24px; border-radius: 50px; box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            z-index: 40; display: flex; align-items: center; gap: 12px;
+            opacity: 0; transition: opacity 0.5s ease, top 0.5s ease; pointer-events: none;
         }
-        /* 調整結果狀態位置 */
         .ar-results-active .ar-pill { opacity: 1; top: 50%; }
 
-        /* 全頁式報告樣式 */
         #report-page {
-            position: absolute;
-            inset: 0;
-            background: var(--pearl-white);
-            z-index: 60;
-            overflow-y: auto;
-            overflow-x: hidden;
-            transform: translateY(100%);
+            position: absolute; inset: 0; background: var(--pearl-white); z-index: 60;
+            overflow-y: auto; overflow-x: hidden; transform: translateY(100%);
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            color: var(--deep-slate);
-            display: flex;
-            flex-direction: column; 
+            color: var(--deep-slate); display: flex; flex-direction: column; 
         }
         #report-page.active { transform: translateY(0); }
         #report-page::-webkit-scrollbar { width: 0px; background: transparent; }
 
         .glass-panel {
-            background: rgba(251, 252, 248, 0.85); 
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            background: rgba(251, 252, 248, 0.85); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         }
-        .btn-gold {
-            background: var(--champagne-gold);
-            color: white;
-            box-shadow: 0 8px 15px rgba(212, 175, 55, 0.2);
-        }
+        .btn-gold { background: var(--champagne-gold); color: white; box-shadow: 0 8px 15px rgba(212, 175, 55, 0.2); }
 
         .custom-modal {
-            position: absolute;
-            inset: 0;
-            background: rgba(44, 62, 80, 0.4);
-            backdrop-filter: blur(5px);
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            position: absolute; inset: 0; background: rgba(44, 62, 80, 0.4); backdrop-filter: blur(5px);
+            z-index: 100; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         .custom-modal.active { opacity: 1; pointer-events: auto; }
         .custom-modal-content {
-            background: var(--pearl-white);
-            border: 1px solid var(--morandi-gray);
-            padding: 28px 24px;
-            border-radius: 24px;
-            text-align: center;
-            color: var(--deep-slate);
-            width: 75%;
-            max-width: 320px;
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
+            background: var(--pearl-white); border: 1px solid var(--morandi-gray);
+            padding: 28px 24px; border-radius: 24px; text-align: center; color: var(--deep-slate);
+            width: 75%; max-width: 320px; transform: translateY(20px); transition: transform 0.3s ease;
         }
         .custom-modal.active .custom-modal-content { transform: translateY(0); }
+
+        /* 問卷選項專用樣式 */
+        .quiz-option {
+            display: block; width: 100%; text-align: left; padding: 12px 16px;
+            background: white; border: 1px solid #E5E7EB; border-radius: 12px;
+            margin-bottom: 8px; font-size: 12px; color: #2C3E50; font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .quiz-option input[type="radio"] { display: none; }
+        .quiz-option:has(input[type="radio"]:checked) {
+            border-color: var(--champagne-gold);
+            background: rgba(212, 175, 55, 0.05);
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -287,28 +205,21 @@
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.8)_100%)]"></div>
             </div>
 
-            <!-- AR 掃描特效 -->
             <div class="scan-line"></div>
             <div class="face-frame" id="face-guide"></div>
             
-            <!-- AR 臉頰紫色追蹤區塊 (SVG) -->
             <svg class="ar-zone-svg" viewBox="0 0 220 320" preserveAspectRatio="xMidYMid meet">
-                <!-- 雙頰與鼻樑的連線區域 -->
                 <path d="M 40 160 C 50 210, 80 220, 110 180 C 140 220, 170 210, 180 160 C 170 140, 130 140, 110 150 C 90 140, 50 140, 40 160 Z" 
                       fill="rgba(168, 85, 247, 0.15)" stroke="#A855F7" stroke-width="2" stroke-dasharray="4 2"/>
-                <!-- 眉心區域 -->
                 <circle cx="110" cy="110" r="15" fill="none" stroke="#D4AF37" stroke-width="1" stroke-dasharray="2 2" />
             </svg>
             
-            <!-- 固定式五官定位點 -->
             <div class="landmark" style="top: 36%; left: 50%;"></div> 
             <div class="landmark" style="top: 44%; left: 42%;"></div> 
             <div class="landmark" style="top: 44%; left: 58%;"></div> 
             <div class="landmark" style="top: 53%; left: 50%;"></div> 
             <div class="landmark" style="top: 64%; left: 50%;"></div> 
 
-            <!-- === AR 檢測結果 (掃描後浮現於鏡頭上) === -->
-            <!-- 懸浮膚質標籤 -->
             <div id="ar-skin-pill" class="ar-pill">
                 <div class="w-10 h-10 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-inner">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2C3E50" stroke-width="2"><path d="M12 3v18"/><path d="M3 7h18"/><path d="M6 7v6a6 6 0 0 0 12 0V7"/></svg>
@@ -319,12 +230,8 @@
                 </div>
             </div>
 
-            <!-- 五大維度 AR 徽章 -->
-            <div id="ar-badges" class="ar-badge-container hidden">
-                <!-- 動態注入的 5 個圓圈 -->
-            </div>
+            <div id="ar-badges" class="ar-badge-container hidden"></div>
 
-            <!-- AR 畫面進入報告頁的按鈕 (加上 pb-safe 確保安全區域) -->
             <div id="ar-action-btn" class="absolute bottom-0 left-0 w-full p-6 pb-8 z-40 hidden badge-pop" style="animation-delay: 1s;">
                 <button onclick="showFullReport()" class="w-full bg-[#D4AF37] text-white py-4 rounded-full text-sm font-bold tracking-wide shadow-xl active:scale-95 transition-transform flex justify-center items-center gap-2">
                     查看完整專屬報告
@@ -332,7 +239,6 @@
                 </button>
             </div>
 
-            <!-- UI 頂部狀態 -->
             <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-30 pointer-events-none">
                 <div class="text-[#FBFCF8]">
                     <p class="text-[9px] tracking-[0.3em] uppercase text-[#B2B1B1] font-bold drop-shadow-md">CHIYIBIO INTELLIGENCE</p>
@@ -344,7 +250,7 @@
                 </div>
             </div>
 
-            <!-- 初始引導視窗 -->
+            <!-- 首頁引導視窗 -->
             <div id="gps-modal" class="absolute inset-x-8 top-1/2 -translate-y-1/2 glass-panel p-8 rounded-[40px] text-center z-40 transition-all duration-500">
                 <div class="w-14 h-14 bg-[#FBFCF8] border border-[#D4AF37]/30 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-12 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -353,12 +259,40 @@
                 <p class="text-xs text-[#B2B1B1] leading-relaxed mb-8 px-2 font-medium">
                     我們將透過視訊微觀技術與定位分析當前環境因素，為您量身打造專屬養護建議。
                 </p>
-                <button id="start-btn" onclick="initCameraAndAnalysis()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-all">
+                <button onclick="initCameraAndShowQuiz()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-all">
                     開啟鏡頭掃描
                 </button>
             </div>
 
-            <!-- 掃描中文字提示 -->
+            <!-- 新增：微型線上諮詢 (問卷彈窗) -->
+            <div id="quiz-modal" class="absolute inset-x-6 top-1/2 -translate-y-1/2 glass-panel p-6 rounded-[32px] z-40 opacity-0 pointer-events-none transition-all duration-500 max-h-[80vh] overflow-y-auto">
+                <h3 class="text-[#D4AF37] text-sm font-bold text-center mb-1 tracking-wider">微型線上諮詢</h3>
+                <p class="text-[10px] text-gray-500 text-center mb-5 font-medium">協助系統進行精準的個人化配方演算</p>
+                
+                <form id="quiz-form">
+                    <!-- Q1 -->
+                    <div class="mb-5">
+                        <p class="text-xs font-bold text-[#2C3E50] mb-3">1. 洗臉後，您最常感受到的肌膚狀態是？</p>
+                        <label class="quiz-option"><input type="radio" name="q1" value="oil"> A. 很快就分泌油脂，容易泛油光</label>
+                        <label class="quiz-option"><input type="radio" name="q1" value="dry"> B. 兩頰容易感到緊繃、乾澀缺水</label>
+                        <label class="quiz-option"><input type="radio" name="q1" value="sensitive"> C. 偶爾會泛紅、或是對環境變化敏感</label>
+                        <label class="quiz-option"><input type="radio" name="q1" value="special"> D. T字部位容易出油，但兩頰偏乾</label>
+                    </div>
+                    <!-- Q2 -->
+                    <div class="mb-6">
+                        <p class="text-xs font-bold text-[#2C3E50] mb-3">2. 您目前最希望能達成的養護目標是？</p>
+                        <label class="quiz-option"><input type="radio" name="q2" value="oil"> A. 淨化毛孔，維持油水平衡與清爽</label>
+                        <label class="quiz-option"><input type="radio" name="q2" value="mature"> B. 提升彈性，對抗歲月痕跡與疲態</label>
+                        <label class="quiz-option"><input type="radio" name="q2" value="sensitive"> C. 穩定膚況，強化肌膚對環境的防禦力</label>
+                        <label class="quiz-option"><input type="radio" name="q2" value="dry"> D. 深層補水，撫平乾燥引起的紋理</label>
+                    </div>
+                    
+                    <button type="button" onclick="submitQuizAndStartScan()" class="w-full btn-gold py-3.5 rounded-xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-all shadow-md">
+                        開始精準掃描
+                    </button>
+                </form>
+            </div>
+
             <div id="scanning-status" class="absolute bottom-24 w-full text-center hidden z-30 pointer-events-none">
                 <p class="text-[#D4AF37] text-[10px] tracking-[0.2em] font-bold uppercase mb-2 animate-pulse drop-shadow-md" id="scan-step-text">正在初始化感測器...</p>
                 <div class="w-32 h-[1px] bg-[#B2B1B1]/30 mx-auto overflow-hidden">
@@ -378,7 +312,6 @@
             </div>
 
             <div class="flex-1 p-6 space-y-6">
-                <!-- 環境與膚質總覽 -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-white p-4 rounded-2xl border border-[#B2B1B1]/30 shadow-sm">
                         <p class="text-[9px] text-[#B2B1B1] uppercase mb-1 font-bold">判斷膚質</p>
@@ -436,104 +369,126 @@
         const chiyibioDatabase = {
             "油性肌膚": {
                 need: "淨化與油水平衡", desc: "結合當前環境（濕度 72%），肌膚皮脂分泌易受影響。建議著重毛孔淨化與深層保濕，維持肌膚清爽透亮質感。",
-                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(沁涼款) / 海洋元素化妝水 / 晶透淨化精華液" }, { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(沁涼款) / 海洋元素化妝水 / 晶透淨化精華液" }, { step: "胜肽植泌素", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
             },
             "特殊肌膚": {
-                need: "溫和調理與防禦", desc: "偵測到當地紫外線指數偏高，肌膚狀態需特別呵護。建議採用溫和調理配方，強化肌膚對環境的物理性防禦力。",
-                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(保濕款) / 海洋元素化妝水 / 晶透淨化精華液 / 青萃淨化精華液" }, { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "海洋元素煥顏霜 / 海洋元素CC霜" }]
+                need: "溫和調理與防禦", desc: "偵測到當地環境因子變化大，肌膚狀態需特別呵護。建議採用溫和調理配方，強化肌膚對環境的物理性防禦力。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(保濕款) / 海洋元素化妝水 / 晶透淨化精華液 / 青萃淨化精華液" }, { step: "胜肽植泌素", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "海洋元素煥顏霜 / 海洋元素CC霜" }]
             },
             "敏弱肌膚": {
-                need: "穩定屏障與舒緩", desc: "觀察到肌膚屏障較為脆弱，且環境溫差可能引發不適。建議簡化保養步驟，使用多肽成分提升肌膚穩定度與含水量。",
-                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 修護奇肌凝膜(保濕款) / 玫瑰Q彈化妝水 / 玫瑰淨磁極緻水" }, { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
+                need: "穩定屏障與舒緩", desc: "觀察到肌膚屏障較為脆弱，且環境溫差可能引起感受不適。建議簡化保養步驟，使用多肽成分提升肌膚穩定度與含水量。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 修護奇肌凝膜(保濕款) / 玫瑰Q彈化妝水 / 玫瑰淨磁極緻水" }, { step: "胜肽植泌素", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
             },
             "乾性肌膚": {
-                need: "深層潤澤與鎖水", desc: "分析顯示肌膚含水量偏低，容易產生乾燥紋理。建議加強深層潤澤與油水補充，恢復肌膚應有的彈潤光澤。",
-                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / 海洋元素CC霜" }]
+                need: "深層潤澤與鎖水", desc: "觀察紀錄顯示肌膚含水量偏低，容易產生乾燥紋理。建議加強深層潤澤與油水補充，恢復肌膚應有的彈潤光澤。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽植泌素", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / 海洋元素CC霜" }]
             },
             "熟齡肌膚": {
-                need: "賦活緊緻與抗老", desc: "針對肌膚彈性支持度變化，建議選用富含外泌體與胜肽之產品，提供全方位賦活能量，落實最美好生活保養哲學。",
-                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽外泌體", name: "海茴香植泌素精華 / 覺醒胜肽2 / 賦活胜肽3" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / C-SKIN水晶微雕 / 海洋元素CC霜" }]
+                need: "賦活緊緻與抗老", desc: "針對肌膚彈性支持度變化，建議選用富含植泌素與胜肽之產品，提供全方位賦活能量，落實最美好生活保養哲學。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽植泌素", name: "海茴香植泌素精華 / 覺醒胜肽2 / 賦活胜肽3" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / C-SKIN水晶微雕 / 海洋元素CC霜" }]
             }
         };
 
-        // 合規的美妝養護指標維度
         const arMetrics = [
-            { name: "澄淨度", color: "#06b6d4" }, 
-            { name: "平滑度", color: "#10b981" }, 
-            { name: "緊緻度", color: "#a855f7" }, 
-            { name: "眼周亮采", color: "#3b82f6" }, 
-            { name: "潤澤度", color: "#f43f5e" }  
+            { name: "澄淨度", color: "#06b6d4" }, { name: "平滑度", color: "#10b981" }, 
+            { name: "緊緻度", color: "#a855f7" }, { name: "眼周亮采", color: "#3b82f6" }, { name: "潤澤度", color: "#f43f5e" }  
         ];
 
         const video = document.getElementById('webcam');
         const appContainer = document.getElementById('app');
         let streamActive = false;
         
+        // 全域變數：儲存演算法計算出的膚質
+        let calculatedSkinType = "油性肌膚"; 
+
         function showModal(msg) {
             document.getElementById('modal-msg').innerText = msg;
             document.getElementById('custom-modal').classList.add('active');
         }
-        function closeModal() {
-            document.getElementById('custom-modal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('custom-modal').classList.remove('active'); }
         
         function updateTime() {
             const now = new Date();
             document.getElementById('time-display').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         }
-        setInterval(updateTime, 1000);
-        updateTime();
+        setInterval(updateTime, 1000); updateTime();
 
-        async function initCameraAndAnalysis() {
+        // 步驟 1：開啟鏡頭並顯示問卷彈窗
+        async function initCameraAndShowQuiz() {
             if (!streamActive) {
-                const btn = document.getElementById('start-btn');
-                btn.innerHTML = `<span class="animate-pulse">啟動感測器中...</span>`;
-                
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ 
                         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false 
                     });
                     video.srcObject = stream;
                     streamActive = true;
-                    startAnalysisUI();
                 } catch (err) {
-                    if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                        showModal("鏡頭被其他 App 佔用中。\n請關閉相機或通訊軟體視訊後重試。");
-                    } else {
-                        showModal("無法存取相機。\n請確認瀏覽器已允許相機權限設定。");
-                    }
-                    btn.innerHTML = `開啟鏡頭掃描`;
+                    showModal("無法存取相機，請確認權限或嘗試使用Chrome瀏覽器。");
+                    return; // 若無相機則中斷
                 }
-            } else {
-                startAnalysisUI();
             }
+            
+            // 隱藏初始 GPS 彈窗，顯示問卷彈窗
+            document.getElementById('gps-modal').classList.add('opacity-0', 'pointer-events-none');
+            const quizModal = document.getElementById('quiz-modal');
+            quizModal.classList.remove('opacity-0', 'pointer-events-none');
         }
 
+        // 步驟 2：處理問卷演算法，然後開始掃描
+        function submitQuizAndStartScan() {
+            const form = document.getElementById('quiz-form');
+            const q1 = form.querySelector('input[name="q1"]:checked')?.value;
+            const q2 = form.querySelector('input[name="q2"]:checked')?.value;
+
+            if (!q1 || !q2) {
+                showModal("請完成微型諮詢選項，以利系統精準評估您的專屬配方。");
+                return;
+            }
+
+            // 【核心積分演算法】
+            let scores = { "油性肌膚": 0, "乾性肌膚": 0, "敏弱肌膚": 0, "熟齡肌膚": 0, "特殊肌膚": 0 };
+
+            // Q1: 肌膚感受計分
+            if (q1 === "oil") scores["油性肌膚"] += 3;
+            if (q1 === "dry") scores["乾性肌膚"] += 3;
+            if (q1 === "sensitive") scores["敏弱肌膚"] += 3;
+            if (q1 === "special") { scores["特殊肌膚"] += 2; scores["油性肌膚"] += 1; }
+
+            // Q2: 保養訴求計分
+            if (q2 === "oil") scores["油性肌膚"] += 2;
+            if (q2 === "mature") scores["熟齡肌膚"] += 4; // 熟齡需求通常最為優先
+            if (q2 === "sensitive") { scores["敏弱肌膚"] += 2; scores["特殊肌膚"] += 1; }
+            if (q2 === "dry") scores["乾性肌膚"] += 2;
+
+            // 找出最高分
+            let maxScore = -1;
+            for (let type in scores) {
+                if (scores[type] > maxScore) {
+                    maxScore = scores[type];
+                    calculatedSkinType = type;
+                }
+            }
+
+            // 隱藏問卷，進入掃描環節
+            document.getElementById('quiz-modal').classList.add('opacity-0', 'pointer-events-none');
+            startAnalysisUI();
+        }
+
+        // 步驟 3：執行掃描動畫
         function startAnalysisUI() {
-            const cameraView = document.getElementById('camera-view');
-            const reportPage = document.getElementById('report-page');
-            const gpsModal = document.getElementById('gps-modal');
             const statusText = document.getElementById('main-status');
             const scanTips = document.getElementById('scanning-status');
             const stepText = document.getElementById('scan-step-text');
             
-            reportPage.classList.remove('active');
-            cameraView.classList.remove('opacity-0', 'pointer-events-none');
-            gpsModal.classList.add('opacity-0', 'pointer-events-none');
-            appContainer.classList.remove('ar-results-active');
-            document.getElementById('ar-badges').classList.add('hidden');
-            document.getElementById('ar-action-btn').classList.add('hidden');
-            
             setTimeout(() => {
                 statusText.innerText = '請將臉部對準光圈'; 
-                appContainer.classList.remove('results-active');
                 appContainer.classList.add('scanning');
                 scanTips.classList.remove('hidden');
-            }, 500);
+            }, 300);
 
             const steps = [
                 "啟動微觀肌膚紋理觀察...",
-                "正在抓取區域氣象與紫外線指數...",
+                "結合微型諮詢數據運算中...",
                 "鎖定核心部位養護節點...",
                 "比對奇異生技護理資料庫...",
                 "綜合評估：產出專屬防禦配方..."
@@ -558,9 +513,10 @@
             }, 6000);
         }
 
+        // 步驟 4：套用演算法結果至介面
         function generateARResults() {
-            const skinTypes = Object.keys(chiyibioDatabase);
-            const detectedType = skinTypes[Math.floor(Math.random() * skinTypes.length)];
+            // 使用演算法計算出的膚質，取代隨機 Math.random()
+            const detectedType = calculatedSkinType;
             const skinData = chiyibioDatabase[detectedType];
 
             document.getElementById('ar-skin-type-text').innerText = detectedType;
@@ -573,7 +529,8 @@
             badgesContainer.classList.remove('hidden');
 
             arMetrics.forEach((metric, index) => {
-                const score = Math.floor(Math.random() * (98 - 75 + 1)) + 75; 
+                // 【核心修正】將分數區間下調至 60-85 分，增加真實感並創造保養需求
+                const score = Math.floor(Math.random() * (85 - 60 + 1)) + 60; 
                 const badgeHTML = `
                     <div class="flex flex-col items-center gap-1 badge-pop" style="animation-delay: ${index * 0.15}s;">
                         <div class="ar-score-circle" style="border-color: ${metric.color};">
@@ -610,7 +567,6 @@
         function showFullReport() {
             const cameraView = document.getElementById('camera-view');
             const reportPage = document.getElementById('report-page');
-            
             cameraView.classList.add('opacity-0', 'pointer-events-none');
             reportPage.classList.add('active');
             reportPage.scrollTop = 0;
@@ -619,15 +575,21 @@
         function retest() {
             const reportPage = document.getElementById('report-page');
             const cameraView = document.getElementById('camera-view');
-            const statusText = document.getElementById('main-status');
+            const gpsModal = document.getElementById('gps-modal');
             
+            // 重置所有視窗，回到最初始狀態
             reportPage.classList.remove('active');
             cameraView.classList.remove('opacity-0', 'pointer-events-none');
-            statusText.innerText = '系統重置中';
+            appContainer.classList.remove('ar-results-active');
+            document.getElementById('ar-badges').classList.add('hidden');
+            document.getElementById('ar-action-btn').classList.add('hidden');
+            document.getElementById('main-status').innerText = '系統待命';
             
-            setTimeout(() => {
-                startAnalysisUI();
-            }, 600);
+            // 顯示初始 GPS 畫面
+            gpsModal.classList.remove('opacity-0', 'pointer-events-none');
+            
+            // 清除問卷選項
+            document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         }
 
         function shareResult() {
