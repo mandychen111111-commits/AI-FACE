@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奇異生技 | AI Skin Analysis (Pro)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap');
+        
+        :root {
+            --morandi-gray: #B2B1B1;
+            --champagne-gold: #D4AF37;
+            --deep-slate: #2C3E50;
+            --pearl-white: #FBFCF8;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background-color: #000;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .phone-container {
+            width: 100%;
+            max-width: 414px;
+            height: 100%;
+            max-height: 896px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 高清即時影像容器 */
+        #video-container {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            background: #000;
+            overflow: hidden; /* 防止溢出 */
+            transition: filter 0.8s ease;
+        }
+
+        /* 強制影片填滿的終極寫法 */
+        video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: cover;
+            transform: translate(-50%, -50%) scaleX(-1); /* 置中並加上鏡像效果 */
+            filter: contrast(1.05) brightness(1.0);
+        }
+
+        /* 當結果顯示時，僅輕微暗化背景，不使用模糊 */
+        .results-active #video-container {
+            filter: brightness(0.4);
+        }
+
+        /* 掃描線動畫 */
+        @keyframes scanMove {
+            0% { transform: translateY(-100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(800px); opacity: 0; }
+        }
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--champagne-gold), transparent);
+            box-shadow: 0 0 25px var(--champagne-gold);
+            z-index: 20;
+            display: none;
+        }
+        .scanning .scan-line {
+            display: block;
+            animation: scanMove 3s ease-in-out infinite;
+        }
+
+        /* 呼吸發光點 */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 20px var(--champagne-gold); }
+        }
+        .landmark {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--champagne-gold);
+            border-radius: 50%;
+            z-index: 25;
+            display: none;
+            border: 2px solid white;
+        }
+        .scanning .landmark, .results-active .landmark {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #D4AF37 0%, #B8972F 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .face-frame {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 380px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 140px 140px 120px 120px;
+            z-index: 15;
+            display: none;
+        }
+        .scanning .face-frame { display: block; }
+
+        /* 自訂訊息彈窗樣式 */
+        .custom-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .custom-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .custom-modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            padding: 28px 24px;
+            border-radius: 24px;
+            text-align: center;
+            color: white;
+            width: 75%;
+            max-width: 320px;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        .custom-modal.active .custom-modal-content {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container" id="app">
+        <!-- 即時高清相機視窗 -->
+        <div id="video-container">
+            <video id="webcam" autoplay playsinline></video>
+            <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50"></div>
+        </div>
+
+        <!-- 掃描層 -->
+        <div class="scan-line"></div>
+        <div class="face-frame"></div>
+        <!-- 模擬臉部特徵點 -->
+        <div class="landmark" style="top: 32%; left: 50%;"></div>
+        <div class="landmark" style="top: 45%; left: 38%;"></div>
+        <div class="landmark" style="top: 45%; left: 62%;"></div>
+        <div class="landmark" style="top: 58%; left: 50%;"></div>
+        <div class="landmark" style="top: 70%; left: 50%;"></div>
+
+        <!-- UI 頂部狀態 -->
+        <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-30">
+            <div class="text-white">
+                <p class="text-[9px] tracking-[0.3em] uppercase opacity-50">CHIYIBIO INTELLIGENCE</p>
+                <h1 class="text-lg font-light" id="main-status">系統待命</h1>
+            </div>
+            <div class="text-right text-white">
+                <p class="text-[10px] opacity-60" id="time-display"></p>
+                <p class="text-[10px] text-[#D4AF37] font-medium" id="location-text">等待定位...</p>
+            </div>
+        </div>
+
+        <!-- 初始引導視窗 -->
+        <div id="gps-modal" class="absolute inset-x-8 top-1/2 -translate-y-1/2 glass-panel p-8 rounded-[40px] text-center shadow-2xl z-40 transition-all duration-500">
+            <div class="w-14 h-14 bg-gradient-to-tr from-[#D4AF37] to-[#FBFCF8] rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-12 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2C3E50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h2 class="text-xl font-medium mb-3 tracking-wide">啟動美肌觀察儀</h2>
+            <p class="text-xs text-gray-300 leading-relaxed mb-8 px-2">
+                我們將透過相機與定位分析當前環境因素，為您量身打造專屬養護建議。
+            </p>
+            <button onclick="initCameraAndAnalysis()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-transform">
+                開啟鏡頭掃描
+            </button>
+        </div>
+
+        <!-- 掃描中文字提示 -->
+        <div id="scanning-status" class="absolute bottom-24 w-full text-center hidden z-30">
+            <p class="text-[#D4AF37] text-[10px] tracking-[0.2em] font-bold uppercase mb-2 animate-pulse" id="scan-step-text">正在初始化感測器...</p>
+            <div class="w-32 h-[1px] bg-white/20 mx-auto overflow-hidden">
+                <div class="h-full bg-[#D4AF37] w-1/2 animate-[shimmer_2s_infinite]"></div>
+            </div>
+        </div>
+
+        <!-- 分析結果面板 -->
+        <div id="result-panel" class="absolute inset-x-6 bottom-10 space-y-4 hidden z-50">
+            <div class="glass-panel p-6 rounded-[32px] fade-in border-t border-white/30">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-[9px] uppercase tracking-widest text-[#D4AF37] font-bold">Observation Report</span>
+                    <button onclick="retest()" class="text-[9px] text-gray-400 border border-white/20 px-3 py-1 rounded-full hover:bg-white/10 transition-colors">重新檢測</button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[9px] text-gray-400 uppercase mb-1">判斷膚質</p>
+                        <p class="text-xl font-light text-white" id="detected-skin-type">分析中...</p>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[9px] text-gray-400 uppercase mb-1">主要保養訴求</p>
+                        <p class="text-[13px] font-medium text-[#D4AF37] mt-1" id="detected-skin-need">分析中...</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-[#D4AF37]/10 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2" class="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <p class="text-[11px] text-gray-200 leading-relaxed" id="skin-desc">
+                        載入專屬養護建議中...
+                    </p>
+                </div>
+            </div>
+
+            <!-- 動態導購清單 (可滾動，配合6步驟加高容器) -->
+            <div class="bg-white p-5 rounded-[32px] shadow-2xl fade-in max-h-[280px] overflow-y-auto" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h4 class="text-gray-900 text-[13px] font-bold">專屬肌膚養護建議</h4>
+                    <span class="text-[9px] text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full">奇異生技專家配方</span>
+                </div>
+                
+                <div id="product-list" class="space-y-3">
+                    <!-- 產品項目將由 JavaScript 動態生成 -->
+                </div>
+                
+                <div class="mt-4">
+                    <button onclick="shareResult()" class="w-full bg-[#D4AF37] text-white py-3.5 rounded-2xl text-xs font-bold tracking-wide shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-[#b8972f]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        複製專屬養護報告與分享
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自訂安全訊息彈窗 -->
+        <div id="custom-modal" class="custom-modal">
+            <div class="custom-modal-content glass-panel">
+                <div class="w-12 h-12 bg-gradient-to-tr from-[#D4AF37] to-[#B8972F] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <span class="text-white text-xl font-bold">i</span>
+                </div>
+                <p id="modal-msg" class="text-[13px] leading-relaxed mb-6 font-light tracking-wide text-gray-200 whitespace-pre-line"></p>
+                <button onclick="closeModal()" class="w-full bg-[#D4AF37] text-white py-3 rounded-xl text-xs font-bold tracking-widest uppercase shadow-md active:scale-95 transition-transform">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 導入奇異生技《美容諮詢服務單》完整 6 步驟資料庫
+        const chiyibioDatabase = {
+            "油性肌膚": {
+                need: "淨化與油水平衡",
+                desc: "觀察到肌膚皮脂分泌較旺盛，建議著重毛孔淨化與深層保濕，維持肌膚清爽透亮質感。",
+                products: [
+                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
+                    { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(沁涼款) / 海洋元素化妝水 / 晶透淨化精華液" },
+                    { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" },
+                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
+                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" },
+                    { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }
+                ]
+            },
+            "特殊肌膚": {
+                need: "溫和調理與防禦",
+                desc: "肌膚狀態需特別呵護，建議採用溫和調理配方，強化肌膚對環境的防禦力。",
+                products: [
+                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
+                    { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(保濕款) / 海洋元素化妝水 / 晶透淨化精華液 / 青萃淨化精華液" },
+                    { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" },
+                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
+                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" },
+                    { step: "修護隔離", name: "海洋元素煥顏霜 / 海洋元素CC霜" }
+                ]
+            },
+            "敏弱肌膚": {
+                need: "穩定屏障與舒緩",
+                desc: "觀察到肌膚屏障較為脆弱，建議簡化保養步驟，使用多肽與舒緩成分提升肌膚穩定度。",
+                products: [
+                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
+                    { step: "基礎保養", name: "海洋多肽洗顏膠 / 修護奇肌凝膜(保濕款) / 玫瑰Q彈化妝水 / 玫瑰淨磁極緻水" },
+                    { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" },
+                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
+                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" },
+                    { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }
+                ]
+            },
+            "乾性肌膚": {
+                need: "深層潤澤與鎖水",
+                desc: "肌膚含水量偏低，容易產生乾燥紋理，建議加強深層潤澤與油水補充，恢復彈潤光澤。",
+                products: [
+                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
+                    { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" },
+                    { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" },
+                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
+                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" },
+                    { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / 海洋元素CC霜" }
+                ]
+            },
+            "熟齡肌膚": {
+                need: "賦活緊緻與抗老",
+                desc: "針對肌膚彈性支持度變化，建議選用富含外泌體與胜肽之產品，提供全方位賦活能量。",
+                products: [
+                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
+                    { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" },
+                    { step: "胜肽外泌體", name: "海茴香植泌素精華 / 覺醒胜肽2 / 賦活胜肽3" },
+                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
+                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" },
+                    { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / C-SKIN水晶微雕 / 海洋元素CC霜" }
+                ]
+            }
+        };
+
+        const video = document.getElementById('webcam');
+        let streamActive = false;
+        
+        // 系統安全訊息彈窗控制
+        function showModal(msg) {
+            document.getElementById('modal-msg').innerText = msg;
+            document.getElementById('custom-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.remove('active');
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time-display').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        async function initCameraAndAnalysis() {
+            if (!streamActive) {
+                try {
+                    // 加入 aspectRatio 參數，引導手機相機輸出直向畫面
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'user',
+                            aspectRatio: { ideal: window.innerHeight / window.innerWidth }
+                        }, 
+                        audio: false 
+                    });
+                    video.srcObject = stream;
+                    streamActive = true;
+                    startAnalysisUI();
+                } catch (err) {
+                    console.error("相機開啟失敗: ", err);
+                    showModal("無法存取相機。\n請授權相機權限以體驗 AI 鏡頭掃描。");
+                }
+            } else {
+                startAnalysisUI();
+            }
+        }
+
+        function startAnalysisUI() {
+            const app = document.getElementById('app');
+            const gpsModal = document.getElementById('gps-modal');
+            const statusText = document.getElementById('main-status');
+            const locationText = document.getElementById('location-text');
+            const scanTips = document.getElementById('scanning-status');
+            const stepText = document.getElementById('scan-step-text');
+
+            gpsModal.classList.add('opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                locationText.innerText = '高雄市, 苓雅區';
+                statusText.innerText = '正在進行微觀偵測';
+                app.classList.remove('results-active');
+                app.classList.add('scanning');
+                scanTips.classList.remove('hidden');
+                document.getElementById('result-panel').classList.add('hidden');
+            }, 500);
+
+            const steps = [
+                "正在定位臉部核心養護區...",
+                "環境因子數據同步中...",
+                "比對奇異生技護理資料庫...",
+                "優化專屬養護配方建議中..."
+            ];
+            
+            let stepIdx = 0;
+            const stepInterval = setInterval(() => {
+                if (stepIdx < steps.length) {
+                    stepText.innerText = steps[stepIdx];
+                    stepIdx++;
+                }
+            }, 1200);
+
+            setTimeout(() => {
+                clearInterval(stepInterval);
+                app.classList.remove('scanning');
+                app.classList.add('results-active');
+                statusText.innerText = '分析完成';
+                scanTips.classList.add('hidden');
+                
+                // 動態生成分析結果與產品推薦
+                generateResult();
+                
+                document.getElementById('result-panel').classList.remove('hidden');
+            }, 5000);
+        }
+
+        // 動態產生分析結果的邏輯
+        function generateResult() {
+            // 取得所有膚質類型鍵值
+            const skinTypes = Object.keys(chiyibioDatabase);
+            // 模擬 AI 分析：隨機抽取一種膚質 (實務上可串接真實影像辨識 API)
+            const detectedType = skinTypes[Math.floor(Math.random() * skinTypes.length)];
+            const skinData = chiyibioDatabase[detectedType];
+
+            // 更新 UI 文案
+            document.getElementById('detected-skin-type').innerText = detectedType;
+            document.getElementById('detected-skin-need').innerText = skinData.need;
+            document.getElementById('skin-desc').innerText = skinData.desc;
+
+            // 動態生成產品清單
+            const productContainer = document.getElementById('product-list');
+            productContainer.innerHTML = ''; // 清空先前的結果
+
+            skinData.products.forEach((prod, index) => {
+                const productHtml = `
+                    <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                        <div class="w-8 h-8 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] font-bold text-[10px] flex-shrink-0">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-gray-400 mb-0.5">${prod.step}</p>
+                            <p class="text-xs text-gray-800 font-medium leading-tight">${prod.name}</p>
+                        </div>
+                    </div>
+                `;
+                productContainer.insertAdjacentHTML('beforeend', productHtml);
+            });
+        }
+
+        // 重新檢測功能
+        function retest() {
+            const app = document.getElementById('app');
+            const resultPanel = document.getElementById('result-panel');
+            const statusText = document.getElementById('main-status');
+            
+            // 隱藏結果，回復初始分析狀態
+            resultPanel.classList.add('hidden');
+            app.classList.remove('results-active');
+            statusText.innerText = '系統重置中';
+            
+            // 短暫延遲後自動啟動新的一輪掃描
+            setTimeout(() => {
+                startAnalysisUI();
+            }, 600);
+        }
+
+        // 安全複製分享功能 (已整合專屬肌膚養護建議)
+        function shareResult() {
+            const skinType = document.getElementById('detected-skin-type').innerText;
+            const skinNeed = document.getElementById('detected-skin-need').innerText;
+            
+            // 讀取資料庫中的產品推薦清單
+            const skinData = chiyibioDatabase[skinType];
+            let productsText = "";
+            
+            if (skinData && skinData.products) {
+                skinData.products.forEach((prod, index) => {
+                    productsText += `✨ 步驟 ${index + 1}：${prod.step}\n👉 推薦選用：${prod.name}\n\n`;
+                });
+            }
+            
+            // 組合符合法規且具備品牌溫度的分享文案
+            const shareText = `【奇異生技 AI 智慧美肌顧問】\n\n我的微觀偵測結果：${skinType}\n核心養護訴求：${skinNeed}\n\n=== 專屬肌膚養護建議 ===\n\n${productsText}🌿 體驗專屬您的科技美肌方案，落實「最美好生活」保養哲學！`;
+            
+            // 使用傳統且最安全的 execCommand 確保不被系統阻擋
+            const textArea = document.createElement("textarea");
+            textArea.value = shareText;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showModal("專屬養護報告已成功複製！\n您可以直接貼上並分享給好友，或儲存至備忘錄。");
+            } catch (err) {
+                showModal("複製失敗，請確認瀏覽器權限設定。");
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+    </script>
+</body>
+</html>
