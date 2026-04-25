@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>奇異生技 | AI Skin Analysis (Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 導入 Google MediaPipe AI 臉部追蹤引擎 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap');
         
@@ -76,12 +81,10 @@
             width: 100%;
             height: 3px;
             background: var(--champagne-gold);
-            /* 增強發光與對比 */
             box-shadow: 0 0 20px 2px var(--champagne-gold), 0 0 40px 5px rgba(212, 175, 55, 0.6);
             z-index: 20;
             display: none;
         }
-        /* 新增漸層掃描光束 */
         .scan-line::before {
             content: '';
             position: absolute;
@@ -96,23 +99,24 @@
             animation: scanMove 2.5s ease-in-out infinite;
         }
 
-        /* --- 強化版呼吸發光點 --- */
+        /* --- 即時動態呼吸發光點 --- */
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 10px rgba(212, 175, 55, 0.8); }
-            50% { transform: scale(1.6); opacity: 1; box-shadow: 0 0 25px rgba(212, 175, 55, 1); }
+            0%, 100% { transform: scale(1) translate(-50%, -50%); box-shadow: 0 0 10px rgba(212, 175, 55, 0.8); }
+            50% { transform: scale(1.6) translate(-30%, -30%); box-shadow: 0 0 25px rgba(212, 175, 55, 1); }
         }
         .landmark {
             position: absolute;
-            width: 8px; /* 縮小基準尺寸讓發光更細緻 */
+            width: 8px; 
             height: 8px;
             background: var(--champagne-gold);
             border-radius: 50%;
             z-index: 25;
-            display: none;
-            /* 移除白色邊框，讓光暈更純粹 */
+            opacity: 0; /* 預設隱藏，抓到臉才顯示 */
+            /* 加入過渡動畫讓追蹤更平滑，不抖動 */
+            transition: top 0.1s linear, left 0.1s linear, opacity 0.3s ease;
         }
-        .scanning .landmark {
-            display: block;
+        .scanning .landmark.active {
+            opacity: 1;
             animation: pulse 1.5s infinite;
         }
 
@@ -139,20 +143,22 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- 校正後的臉部定位框 --- */
+        /* --- 臉部引導定位框 --- */
         .face-frame {
             position: absolute;
-            top: 50%; /* 絕對置中 */
+            top: 50%; 
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 220px; /* 縮小寬度符合自拍比例 */
-            height: 320px; /* 縮小高度 */
-            border: 2px dashed rgba(212, 175, 55, 0.7); /* 改為虛線增添科技感 */
+            width: 220px; 
+            height: 320px; 
+            border: 2px dashed rgba(212, 175, 55, 0.5); 
             border-radius: 110px 110px 100px 100px;
             z-index: 15;
             display: none;
+            transition: opacity 0.5s ease;
         }
         .scanning .face-frame { display: block; }
+        .scanning .face-frame.face-detected { opacity: 0.2; } /* 抓到臉後變淡，凸顯追蹤點 */
 
         /* 全頁式報告樣式 */
         #report-page {
@@ -174,7 +180,7 @@
         
         #report-page::-webkit-scrollbar { width: 0px; background: transparent; }
 
-        /* 明亮版自訂訊息彈窗 */
+        /* 系統彈窗 */
         .custom-modal {
             position: absolute;
             inset: 0;
@@ -217,23 +223,24 @@
         <div id="camera-view" class="absolute inset-0 z-10 transition-opacity duration-500">
             <!-- 即時高清相機視窗 -->
             <div id="video-container">
-                <video id="webcam" autoplay playsinline></video>
-                <!-- 優化遮罩：移除過白濾鏡，改為「四周暗化、中央聚焦」的光暈效果，凸顯掃描光束 -->
+                <video id="webcam" autoplay playsinline muted></video>
+                <!-- 保留四周暗化光暈，使中間聚焦且金線高對比 -->
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]"></div>
             </div>
 
             <!-- 掃描層 -->
             <div class="scan-line"></div>
-            <div class="face-frame"></div>
-            <!-- 精準校正後的五官特徵點 (收攏比例貼合真實臉型) -->
-            <div class="landmark" style="top: 36%; left: 50%; margin-left: -4px;"></div> <!-- 眉心 -->
-            <div class="landmark" style="top: 44%; left: 42%; margin-left: -4px;"></div> <!-- 左眼 -->
-            <div class="landmark" style="top: 44%; left: 58%; margin-left: -4px;"></div> <!-- 右眼 -->
-            <div class="landmark" style="top: 53%; left: 50%; margin-left: -4px;"></div> <!-- 鼻尖 -->
-            <div class="landmark" style="top: 64%; left: 50%; margin-left: -4px;"></div> <!-- 下巴 -->
+            <div class="face-frame" id="face-guide"></div>
+            
+            <!-- 即時動態特徵點 (交由 AI 控制座標) -->
+            <div class="landmark" id="pt-forehead"></div> 
+            <div class="landmark" id="pt-left-eye"></div> 
+            <div class="landmark" id="pt-right-eye"></div> 
+            <div class="landmark" id="pt-nose"></div> 
+            <div class="landmark" id="pt-chin"></div> 
 
             <!-- UI 頂部狀態 -->
-            <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-30">
+            <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-30 pointer-events-none">
                 <div class="text-[#FBFCF8]">
                     <p class="text-[9px] tracking-[0.3em] uppercase text-[#B2B1B1] font-bold drop-shadow-md">CHIYIBIO INTELLIGENCE</p>
                     <h1 class="text-lg font-medium drop-shadow-md" id="main-status">系統待命</h1>
@@ -251,15 +258,15 @@
                 </div>
                 <h2 class="text-xl font-medium mb-3 tracking-wide text-[#2C3E50]">啟動美肌觀察儀</h2>
                 <p class="text-xs text-[#B2B1B1] leading-relaxed mb-8 px-2 font-medium">
-                    我們將透過相機與定位分析當前環境因素，為您量身打造專屬養護建議。
+                    我們將透過即時 AI 臉部追蹤與環境定位，為您量身打造專屬養護建議。
                 </p>
-                <button onclick="initCameraAndAnalysis()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-transform">
+                <button id="start-btn" onclick="initCameraAndAnalysis()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-all">
                     開啟鏡頭掃描
                 </button>
             </div>
 
             <!-- 掃描中文字提示 -->
-            <div id="scanning-status" class="absolute bottom-24 w-full text-center hidden z-30">
+            <div id="scanning-status" class="absolute bottom-24 w-full text-center hidden z-30 pointer-events-none">
                 <p class="text-[#D4AF37] text-[10px] tracking-[0.2em] font-bold uppercase mb-2 animate-pulse drop-shadow-md" id="scan-step-text">正在初始化感測器...</p>
                 <div class="w-32 h-[1px] bg-[#B2B1B1]/30 mx-auto overflow-hidden">
                     <div class="h-full bg-[#D4AF37] w-1/2 animate-[shimmer_2s_infinite]"></div>
@@ -280,7 +287,6 @@
 
             <!-- 報告內容區 -->
             <div class="flex-1 p-6 space-y-6">
-                
                 <!-- 環境與膚質總覽 -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-white p-4 rounded-2xl border border-[#B2B1B1]/30 shadow-sm">
@@ -312,13 +318,10 @@
                         <h3 class="text-sm font-bold text-[#2C3E50] tracking-wide">專屬肌膚養護配方</h3>
                         <span class="text-[9px] text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-full font-bold tracking-wider">奇異生技</span>
                     </div>
-                    
-                    <div id="product-list" class="space-y-3">
-                        <!-- 動態生成 6 步驟 -->
-                    </div>
+                    <div id="product-list" class="space-y-3"></div>
                 </div>
 
-                <!-- 底部操作列 (跟隨滾動) -->
+                <!-- 底部操作列 -->
                 <div class="pt-6 mt-4 border-t border-[#B2B1B1]/30 flex gap-3">
                     <button onclick="retest()" class="w-1/3 border border-[#B2B1B1] text-[#2C3E50] bg-white py-3.5 rounded-2xl text-xs font-bold tracking-wide active:scale-95 transition-transform hover:bg-[#FBFCF8]">
                         重新檢測
@@ -328,10 +331,7 @@
                         複製並分享報告
                     </button>
                 </div>
-                
-                <!-- 底部安全高度 -->
                 <div class="h-16 w-full flex-shrink-0"></div>
-                
             </div>
         </div>
 
@@ -348,72 +348,36 @@
     </div>
 
     <script>
-        // 導入奇異生技《美容諮詢服務單》完整 6 步驟資料庫
+        // 奇異生技《美容諮詢服務單》資料庫
         const chiyibioDatabase = {
             "油性肌膚": {
-                need: "淨化與油水平衡",
-                desc: "結合當前環境（濕度 72%），肌膚皮脂分泌易受影響。建議著重毛孔淨化與深層保濕，維持肌膚清爽透亮質感。",
-                products: [
-                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
-                    { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(沁涼款) / 海洋元素化妝水 / 晶透淨化精華液" },
-                    { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" },
-                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
-                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" },
-                    { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }
-                ]
+                need: "淨化與油水平衡", desc: "結合當前環境（濕度 72%），肌膚皮脂分泌易受影響。建議著重毛孔淨化與深層保濕，維持肌膚清爽透亮質感。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(沁涼款) / 海洋元素化妝水 / 晶透淨化精華液" }, { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
             },
             "特殊肌膚": {
-                need: "溫和調理與防禦",
-                desc: "偵測到當地紫外線指數偏高，肌膚狀態需特別呵護。建議採用溫和調理配方，強化肌膚對環境的物理性防禦力。",
-                products: [
-                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
-                    { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(保濕款) / 海洋元素化妝水 / 晶透淨化精華液 / 青萃淨化精華液" },
-                    { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" },
-                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
-                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" },
-                    { step: "修護隔離", name: "海洋元素煥顏霜 / 海洋元素CC霜" }
-                ]
+                need: "溫和調理與防禦", desc: "偵測到當地紫外線指數偏高，肌膚狀態需特別呵護。建議採用溫和調理配方，強化肌膚對環境的物理性防禦力。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(保濕款) / 海洋元素化妝水 / 晶透淨化精華液 / 青萃淨化精華液" }, { step: "胜肽外泌體", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "海洋元素煥顏霜 / 海洋元素CC霜" }]
             },
             "敏弱肌膚": {
-                need: "穩定屏障與舒緩",
-                desc: "觀察到肌膚屏障較為脆弱，且環境溫差可能引發不適。建議簡化保養步驟，使用多肽成分提升肌膚穩定度與含水量。",
-                products: [
-                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
-                    { step: "基礎保養", name: "海洋多肽洗顏膠 / 修護奇肌凝膜(保濕款) / 玫瑰Q彈化妝水 / 玫瑰淨磁極緻水" },
-                    { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" },
-                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
-                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" },
-                    { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }
-                ]
+                need: "穩定屏障與舒緩", desc: "觀察到肌膚屏障較為脆弱，且環境溫差可能引發不適。建議簡化保養步驟，使用多肽成分提升肌膚穩定度與含水量。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 修護奇肌凝膜(保濕款) / 玫瑰Q彈化妝水 / 玫瑰淨磁極緻水" }, { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
             },
             "乾性肌膚": {
-                need: "深層潤澤與鎖水",
-                desc: "分析顯示肌膚含水量偏低，容易產生乾燥紋理。建議加強深層潤澤與油水補充，恢復肌膚應有的彈潤光澤。",
-                products: [
-                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
-                    { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" },
-                    { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" },
-                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
-                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" },
-                    { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / 海洋元素CC霜" }
-                ]
+                need: "深層潤澤與鎖水", desc: "分析顯示肌膚含水量偏低，容易產生乾燥紋理。建議加強深層潤澤與油水補充，恢復肌膚應有的彈潤光澤。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽外泌體", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / 海洋元素CC霜" }]
             },
             "熟齡肌膚": {
-                need: "賦活緊緻與抗老",
-                desc: "針對肌膚彈性支持度變化，建議選用富含外泌體與胜肽之產品，提供全方位賦活能量，落實最美好生活保養哲學。",
-                products: [
-                    { step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" },
-                    { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" },
-                    { step: "胜肽外泌體", name: "海茴香植泌素精華 / 覺醒胜肽2 / 賦活胜肽3" },
-                    { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" },
-                    { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" },
-                    { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / C-SKIN水晶微雕 / 海洋元素CC霜" }
-                ]
+                need: "賦活緊緻與抗老", desc: "針對肌膚彈性支持度變化，建議選用富含外泌體與胜肽之產品，提供全方位賦活能量，落實最美好生活保養哲學。",
+                products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽外泌體", name: "海茴香植泌素精華 / 覺醒胜肽2 / 賦活胜肽3" }, { step: "深層保養", name: "海茴香外泌體調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / C-SKIN水晶微雕 / 海洋元素CC霜" }]
             }
         };
 
         const video = document.getElementById('webcam');
+        const appContainer = document.getElementById('app');
+        const videoContainer = document.getElementById('video-container');
         let streamActive = false;
+        let faceMeshConfigured = false;
+        let aiCamera = null;
         
         function showModal(msg) {
             document.getElementById('modal-msg').innerText = msg;
@@ -431,22 +395,104 @@
         setInterval(updateTime, 1000);
         updateTime();
 
+        // 核心：AI 臉部模型結果處理
+        function onResults(results) {
+            if (!appContainer.classList.contains('scanning')) return;
+
+            const landmarksEls = document.querySelectorAll('.landmark');
+            const guideFrame = document.getElementById('face-guide');
+
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                // 抓到臉龐，顯示追蹤點並淡化外框
+                landmarksEls.forEach(el => el.classList.add('active'));
+                guideFrame.classList.add('face-detected');
+
+                const landmarks = results.multiFaceLandmarks[0];
+                
+                // 動態計算座標映射 (處理 object-fit: cover 與 scaleX(-1) 鏡像)
+                const containerWidth = videoContainer.clientWidth;
+                const containerHeight = videoContainer.clientHeight;
+                const videoRatio = video.videoWidth / video.videoHeight;
+                const containerRatio = containerWidth / containerHeight;
+                
+                let renderWidth, renderHeight, offsetX = 0, offsetY = 0;
+                if (containerRatio > videoRatio) {
+                    renderWidth = containerWidth;
+                    renderHeight = containerWidth / videoRatio;
+                    offsetY = (containerHeight - renderHeight) / 2;
+                } else {
+                    renderHeight = containerHeight;
+                    renderWidth = containerHeight * videoRatio;
+                    offsetX = (containerWidth - renderWidth) / 2;
+                }
+
+                // 座標轉換函式 (因鏡頭翻轉，X軸需反轉: 1 - x)
+                const updatePoint = (id, landmarkObj) => {
+                    const el = document.getElementById(id);
+                    if(!el || !landmarkObj) return;
+                    const x = offsetX + (1 - landmarkObj.x) * renderWidth;
+                    const y = offsetY + landmarkObj.y * renderHeight;
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y}px`;
+                };
+
+                // 對應五官特徵點 (MediaPipe 標準 Index)
+                updatePoint('pt-forehead', landmarks[10]);  // 眉心
+                updatePoint('pt-right-eye', landmarks[386]); // 右眼 (鏡像中為左側)
+                updatePoint('pt-left-eye', landmarks[159]);  // 左眼 (鏡像中為右側)
+                updatePoint('pt-nose', landmarks[4]);       // 鼻尖
+                updatePoint('pt-chin', landmarks[152]);     // 下巴
+
+            } else {
+                // 未抓到臉龐時隱藏
+                landmarksEls.forEach(el => el.classList.remove('active'));
+                guideFrame.classList.remove('face-detected');
+            }
+        }
+
         async function initCameraAndAnalysis() {
             if (!streamActive) {
+                const btn = document.getElementById('start-btn');
+                btn.innerHTML = `<span class="animate-pulse">載入 AI 面部引擎中...</span>`;
+                
                 try {
+                    // 1. 初始化相機
                     const stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { 
-                            facingMode: 'user',
-                            aspectRatio: { ideal: window.innerHeight / window.innerWidth }
-                        }, 
+                        video: { facingMode: 'user', aspectRatio: { ideal: window.innerHeight / window.innerWidth } }, 
                         audio: false 
                     });
                     video.srcObject = stream;
                     streamActive = true;
+
+                    // 2. 初始化 Google FaceMesh
+                    if (!faceMeshConfigured) {
+                        const faceMesh = new FaceMesh({locateFile: (file) => {
+                            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                        }});
+                        faceMesh.setOptions({
+                            maxNumFaces: 1,
+                            refineLandmarks: false,
+                            minDetectionConfidence: 0.5,
+                            minTrackingConfidence: 0.5
+                        });
+                        faceMesh.onResults(onResults);
+
+                        aiCamera = new Camera(video, {
+                            onFrame: async () => {
+                                if(appContainer.classList.contains('scanning')){
+                                    await faceMesh.send({image: video});
+                                }
+                            }
+                        });
+                        await aiCamera.start();
+                        faceMeshConfigured = true;
+                    }
+
                     startAnalysisUI();
                 } catch (err) {
-                    console.error("相機開啟失敗: ", err);
-                    showModal("無法存取相機。\n請授權相機權限以體驗 AI 鏡頭掃描。");
+                    console.error("相機或AI開啟失敗: ", err);
+                    showModal("無法存取相機或載入AI。\n請確認網路與權限。");
+                    btn.innerHTML = `開啟鏡頭掃描`;
                 }
             } else {
                 startAnalysisUI();
@@ -454,7 +500,6 @@
         }
 
         function startAnalysisUI() {
-            const app = document.getElementById('app');
             const cameraView = document.getElementById('camera-view');
             const reportPage = document.getElementById('report-page');
             const gpsModal = document.getElementById('gps-modal');
@@ -467,20 +512,24 @@
             cameraView.classList.remove('opacity-0', 'pointer-events-none');
             gpsModal.classList.add('opacity-0', 'pointer-events-none');
             
+            // 重置引導框與特徵點狀態
+            document.getElementById('face-guide').classList.remove('face-detected');
+            document.querySelectorAll('.landmark').forEach(el => el.classList.remove('active'));
+            
             setTimeout(() => {
                 locationText.innerText = '高雄市, 苓雅區';
-                statusText.innerText = '正在進行微觀偵測';
-                app.classList.remove('results-active');
-                app.classList.add('scanning');
+                statusText.innerText = '正在進行 AI 微觀偵測';
+                appContainer.classList.remove('results-active');
+                appContainer.classList.add('scanning');
                 scanTips.classList.remove('hidden');
             }, 500);
 
             const steps = [
-                "AI 臉部輪廓精準定位中...",
-                "正在觀察肌膚紋理與細緻度...",
+                "啟動 AI 臉部輪廓精準定位...",
+                "正在追蹤肌膚紋理與五官座標...",
                 "鎖定 T 字部位與 U 字部位養護節點...",
                 "環境分析：抓取氣象與紫外線指數...",
-                "綜合評估：根據在地環境優化養護配方..."
+                "綜合評估：根據在地環境優化配方..."
             ];
             
             let stepIdx = 0;
@@ -493,7 +542,7 @@
 
             setTimeout(() => {
                 clearInterval(stepInterval);
-                app.classList.remove('scanning');
+                appContainer.classList.remove('scanning');
                 statusText.innerText = '掃描完成';
                 scanTips.classList.add('hidden');
                 
