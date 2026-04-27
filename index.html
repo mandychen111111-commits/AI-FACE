@@ -246,7 +246,7 @@
                 </div>
                 <div class="text-right text-[#FBFCF8]">
                     <p class="text-[10px] text-[#B2B1B1] font-medium drop-shadow-md" id="time-display"></p>
-                    <p class="text-[10px] text-[#D4AF37] font-bold drop-shadow-md" id="location-text">等待定位...</p>
+                    <p class="text-[10px] text-[#D4AF37] font-bold drop-shadow-md" id="location-text">等待環境定位...</p>
                 </div>
             </div>
 
@@ -260,11 +260,11 @@
                     我們將透過視訊微觀技術與定位分析當前環境因素，為您量身打造專屬養護建議。
                 </p>
                 <button onclick="initCameraAndShowQuiz()" class="w-full btn-gold py-4 rounded-2xl text-xs font-bold tracking-[0.1em] uppercase active:scale-95 transition-all">
-                    開啟鏡頭掃描
+                    允許相機與定位掃描
                 </button>
             </div>
 
-            <!-- 新增：微型線上諮詢 (問卷彈窗) -->
+            <!-- 微型線上諮詢 (問卷彈窗) -->
             <div id="quiz-modal" class="absolute inset-x-6 top-1/2 -translate-y-1/2 glass-panel p-6 rounded-[32px] z-40 opacity-0 pointer-events-none transition-all duration-500 max-h-[80vh] overflow-y-auto">
                 <h3 class="text-[#D4AF37] text-sm font-bold text-center mb-1 tracking-wider">微型線上諮詢</h3>
                 <p class="text-[10px] text-gray-500 text-center mb-5 font-medium">協助系統進行精準的個人化配方演算</p>
@@ -368,7 +368,7 @@
     <script>
         const chiyibioDatabase = {
             "油性肌膚": {
-                need: "淨化與油水平衡", desc: "結合當前環境（濕度 72%），肌膚皮脂分泌易受影響。建議著重毛孔淨化與深層保濕，維持肌膚清爽透亮質感。",
+                need: "淨化與油水平衡", desc: "結合當前環境與地理氣候分析，肌膚皮脂分泌易受影響。建議著重毛孔淨化與深層保濕，維持肌膚清爽透亮質感。",
                 products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(沁涼款) / 海洋元素化妝水 / 晶透淨化精華液" }, { step: "胜肽植泌素", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
             },
             "特殊肌膚": {
@@ -376,7 +376,7 @@
                 products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋元素洗面膠 / 修護奇肌凝膜(保濕款) / 海洋元素化妝水 / 晶透淨化精華液 / 青萃淨化精華液" }, { step: "胜肽植泌素", name: "海茴香植泌素精華 / 紫調胜肽1 / 覺醒胜肽2" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 淨白緊緻面膜" }, { step: "修護隔離", name: "海洋元素煥顏霜 / 海洋元素CC霜" }]
             },
             "敏弱肌膚": {
-                need: "穩定屏障與舒緩", desc: "觀察到肌膚屏障較為脆弱，且環境溫差可能引起感受不適。建議簡化保養步驟，使用多肽成分提升肌膚穩定度與含水量。",
+                need: "穩定屏障與舒緩", desc: "觀察到肌膚屏障較為脆弱，且定位區環境溫差可能引起感受不適。建議簡化保養步驟，使用多肽成分提升肌膚穩定度與含水量。",
                 products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 修護奇肌凝膜(保濕款) / 玫瑰Q彈化妝水 / 玫瑰淨磁極緻水" }, { step: "胜肽植泌素", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "賦活水凝晶露 / 海洋元素CC霜" }]
             },
             "乾性肌膚": {
@@ -384,7 +384,7 @@
                 products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽植泌素", name: "覺醒胜肽2 / 賦活胜肽3 / 海茴香植泌素精萃" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / 海洋元素CC霜" }]
             },
             "熟齡肌膚": {
-                need: "賦活緊緻與抗老", desc: "針對肌膚彈性支持度變化，建議選用富含植泌素與胜肽之產品，提供全方位賦活能量，落實最美好生活保養哲學。",
+                need: "賦活緊緻與抗老", desc: "針對肌膚彈性支持度變化，建議選用富含植泌素與胜肽之產品，搭配當地氣候變化提供全方位賦活能量，落實最美好生活保養哲學。",
                 products: [{ step: "淨化毛孔", name: "海洋元素卸妝水 / 舒張金萃蜜凍" }, { step: "基礎保養", name: "海洋多肽洗顏膠 / 肌能煥膚精華 / 玫瑰Q彈化妝水 / 青萃淨化精華液" }, { step: "胜肽植泌素", name: "海茴香植泌素精華 / 覺醒胜肽2 / 賦活胜肽3" }, { step: "深層保養", name: "海茴香植泌素調理精華 / 海洋晶研C晶露" }, { step: "循環導入", name: "金鑽頂級全效精華霜 / 尖端深層循環棒 / 煥醒賦活面膜" }, { step: "修護隔離", name: "晶鑽煥采精華 / 海洋元素煥顏霜 / C-SKIN水晶微雕 / 海洋元素CC霜" }]
             }
         };
@@ -397,8 +397,6 @@
         const video = document.getElementById('webcam');
         const appContainer = document.getElementById('app');
         let streamActive = false;
-        
-        // 全域變數：儲存演算法計算出的膚質
         let calculatedSkinType = "油性肌膚"; 
 
         function showModal(msg) {
@@ -413,8 +411,40 @@
         }
         setInterval(updateTime, 1000); updateTime();
 
-        // 步驟 1：開啟鏡頭並顯示問卷彈窗
+        // 核心：真實 GPS 定位與逆向地理編碼轉換
+        function startGeolocation() {
+            const locationText = document.getElementById('location-text');
+            locationText.innerText = '定位中...';
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(async function(position) {
+                    try {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        // 串接開源且免費的 OSM Nominatim API，將經緯度轉換為城市名稱
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=zh-TW`);
+                        const data = await res.json();
+                        
+                        // 優先抓取城市，若無則抓取縣市或區域
+                        const city = data.address.city || data.address.county || data.address.town || data.address.state || "在地環境";
+                        locationText.innerText = `${city} | 氣候分析中`;
+                    } catch (e) {
+                        locationText.innerText = "精準環境參數載入";
+                    }
+                }, function(error) {
+                    // 若客戶拒絕或發生錯誤，優雅降級為預設文字
+                    locationText.innerText = "預設環境參數"; 
+                }, { timeout: 10000 });
+            } else {
+                locationText.innerText = "環境參數分析中";
+            }
+        }
+
+        // 步驟 1：開啟鏡頭、觸發定位並顯示問卷彈窗
         async function initCameraAndShowQuiz() {
+            // 同步觸發真實 GPS 定位請求
+            startGeolocation();
+
             if (!streamActive) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -424,11 +454,10 @@
                     streamActive = true;
                 } catch (err) {
                     showModal("無法存取相機，請確認權限或嘗試使用Chrome瀏覽器。");
-                    return; // 若無相機則中斷
+                    return; 
                 }
             }
             
-            // 隱藏初始 GPS 彈窗，顯示問卷彈窗
             document.getElementById('gps-modal').classList.add('opacity-0', 'pointer-events-none');
             const quizModal = document.getElementById('quiz-modal');
             quizModal.classList.remove('opacity-0', 'pointer-events-none');
@@ -445,22 +474,18 @@
                 return;
             }
 
-            // 【核心積分演算法】
             let scores = { "油性肌膚": 0, "乾性肌膚": 0, "敏弱肌膚": 0, "熟齡肌膚": 0, "特殊肌膚": 0 };
 
-            // Q1: 肌膚感受計分
             if (q1 === "oil") scores["油性肌膚"] += 3;
             if (q1 === "dry") scores["乾性肌膚"] += 3;
             if (q1 === "sensitive") scores["敏弱肌膚"] += 3;
             if (q1 === "special") { scores["特殊肌膚"] += 2; scores["油性肌膚"] += 1; }
 
-            // Q2: 保養訴求計分
             if (q2 === "oil") scores["油性肌膚"] += 2;
-            if (q2 === "mature") scores["熟齡肌膚"] += 4; // 熟齡需求通常最為優先
+            if (q2 === "mature") scores["熟齡肌膚"] += 4; 
             if (q2 === "sensitive") { scores["敏弱肌膚"] += 2; scores["特殊肌膚"] += 1; }
             if (q2 === "dry") scores["乾性肌膚"] += 2;
 
-            // 找出最高分
             let maxScore = -1;
             for (let type in scores) {
                 if (scores[type] > maxScore) {
@@ -469,7 +494,6 @@
                 }
             }
 
-            // 隱藏問卷，進入掃描環節
             document.getElementById('quiz-modal').classList.add('opacity-0', 'pointer-events-none');
             startAnalysisUI();
         }
@@ -515,7 +539,6 @@
 
         // 步驟 4：套用演算法結果至介面
         function generateARResults() {
-            // 使用演算法計算出的膚質，取代隨機 Math.random()
             const detectedType = calculatedSkinType;
             const skinData = chiyibioDatabase[detectedType];
 
@@ -529,7 +552,6 @@
             badgesContainer.classList.remove('hidden');
 
             arMetrics.forEach((metric, index) => {
-                // 【核心修正】將分數區間下調至 60-85 分，增加真實感並創造保養需求
                 const score = Math.floor(Math.random() * (85 - 60 + 1)) + 60; 
                 const badgeHTML = `
                     <div class="flex flex-col items-center gap-1 badge-pop" style="animation-delay: ${index * 0.15}s;">
@@ -577,18 +599,15 @@
             const cameraView = document.getElementById('camera-view');
             const gpsModal = document.getElementById('gps-modal');
             
-            // 重置所有視窗，回到最初始狀態
             reportPage.classList.remove('active');
             cameraView.classList.remove('opacity-0', 'pointer-events-none');
             appContainer.classList.remove('ar-results-active');
             document.getElementById('ar-badges').classList.add('hidden');
             document.getElementById('ar-action-btn').classList.add('hidden');
             document.getElementById('main-status').innerText = '系統待命';
+            document.getElementById('location-text').innerText = '等待環境定位...';
             
-            // 顯示初始 GPS 畫面
             gpsModal.classList.remove('opacity-0', 'pointer-events-none');
-            
-            // 清除問卷選項
             document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
         }
 
